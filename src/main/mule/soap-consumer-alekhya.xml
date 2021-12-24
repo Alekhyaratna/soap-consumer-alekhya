@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d3c50889-bd14-48e1-9c66-36cf7428afb8" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="0bab4736-c696-4fcc-90d5-7b4ecd757003" >
+		<wsc:connection wsdlLocation="http://www.dneonline.com/calculator.asmx?wsdl" service="Calculator" port="CalculatorSoap12" address="http://www.dneonline.com/calculator.asmx" >
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
+	</wsc:config>
+	<flow name="soap-consumer-alekhyaFlow" doc:id="b2353c87-8c95-429e-8aac-83976ff4af4f" >
+		<http:listener doc:name="multiplication" doc:id="f9201875-ff88-40e9-bb70-df4feceee5e6" config-ref="HTTP_Listener_config" path="/soapconsume"/>
+		<ee:transform doc:name="Transform Message" doc:id="eb3108c1-9d83-4953-90ec-26104a38b998" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+ns ns0 http://tempuri.org/
+output application/xml
+---
+{
+	ns0#Multiply: {
+		ns0#intA:  attributes.queryParams.q1,
+		ns0#intB: attributes.queryParams.q2
+	}
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="Multiply" doc:name="Consume" doc:id="8e893ae5-3a9e-4102-8be4-cd461e9a1352" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="0ce568fc-9ed5-42fc-ad32-c49b6a39f127" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"result of multiplication": payload.body.ns0#MultiplyResponse.ns0#MultiplyResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="soap-consumer-alekhyaFlow1" doc:id="b7be2bf0-ed2b-47ae-a187-c7e6925f22ef" >
+		<http:listener doc:name="suboperation" doc:id="4ff09802-1df4-46fc-9f0d-54e0dbc5ba15" config-ref="HTTP_Listener_config" path="/subsoap"/>
+		<ee:transform doc:name="Transform Message" doc:id="8796e8bd-0375-40c9-bf2a-0c5e863f3373" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Subtract: {
+		ns0#intA: attributes.queryParams.q1,
+		ns0#intB: attributes.queryParams.q2
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume" doc:id="173834cb-692d-439b-b61e-2e887cdbf3f9" config-ref="Web_Service_Consumer_Config" operation="Subtract"/>
+		<ee:transform doc:name="Transform Message" doc:id="e7055320-991a-41e1-8639-a7ba21d2b631" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"substract" : payload.body.ns0#SubtractResponse.ns0#SubtractResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="soap-consumer-alekhyaFlow2" doc:id="1775812c-bcf1-4c58-ab39-4ef8fc31484f" >
+		<http:listener doc:name="divsoap" doc:id="8a8c03a8-616a-4567-89b8-545634ec2bd6" config-ref="HTTP_Listener_config" path="/divsoap"/>
+		<ee:transform doc:name="Transform Message" doc:id="684f4f47-e297-4a81-939c-96dd02cb968f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Divide: {
+		ns0#intA: attributes.queryParams.q1,
+		ns0#intB: attributes.queryParams.q2
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="Divide" doc:name="Consume" doc:id="f2691abc-6249-450c-86ba-3625a78d1eed" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="3ac66dd9-5463-4794-af48-157c1af5da7a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"division result" : payload.body.ns0#DivideResponse.ns0#DivideResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="soap-consumer-alekhyaFlow3" doc:id="9f7b401a-1e00-449b-bf25-a872c1e80ddd" >
+		<http:listener doc:name="addition" doc:id="5ea3396c-bed0-4045-8916-d9ab51b3b5e6" config-ref="HTTP_Listener_config" path="/addsoap"/>
+		<ee:transform doc:name="Transform Message" doc:id="be4f30ca-f19f-4cee-91c7-519c54bff5e3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Add: {
+		ns0#intA: attributes.queryParams.q1,
+		ns0#intB: attributes.queryParams.q2
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="Add" doc:name="Consume" doc:id="f47e99ea-5cb4-423d-a8b9-4426ff805522" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="a2932d3d-7086-47f1-bb00-404a48acf5ef" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+    "add result" : payload.body.ns0#AddResponse.ns0#AddResult
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
